@@ -1,0 +1,5 @@
+# union of what staroids wants on both FunHouse and MacroPad
+adafruit_imageload
+adafruit_display_text
+neopixel
+adafruit_dotstar
