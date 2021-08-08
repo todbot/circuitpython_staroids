@@ -1,4 +1,4 @@
- 
+
 # staroids_code.py -- fakey Almost Asteroids
 # 4 Aug 2021 - @todbot
 import board, time, math, random
@@ -18,11 +18,11 @@ if board_type == 'macropad':
     accel_max_ship = 0.08
     tile_w = 12
     tile_h = 12
-    ship_fname = '/imgs/ship-sheet.bmp'
-    roid_fnames = ['/imgs/roid0-sheet.bmp', '/imgs/roid1-sheet.bmp']
-    roidexp_fname = '/imgs/roidexp-sheet.bmp'
+    ship_fname = '/imgs/ship_12_sheet.bmp'
+    roid_fnames = ['/imgs/roid0_12_sheet.bmp', '/imgs/roid1_12_sheet.bmp']
+    roidexp_fname = '/imgs/roidexp_12_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_stars.bmp'
+    bg_fname = '/imgs/bg_stars_mono.bmp'
     leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.1)
     # stolen from adafruit_macropad, thx kattni!
     keypins = [getattr(board, "KEY%d" % (num + 1)) for num in (list(range(12)))]
@@ -31,7 +31,6 @@ if board_type == 'macropad':
     def get_user_input(turning,thrusting):
         key = keys.events.get()
         if key:
-            print("key:",key, key)
             if key.key_number == 3:  # KEY4 rotate LEFT
                 turning = -0.15 if key.pressed else 0
             if key.key_number == 5:  # KEY6 rotate RIGHT
@@ -50,9 +49,9 @@ elif board_type == 'funhouse':
     accel_max_ship = 0.2
     tile_w = 30
     tile_h = 30
-    ship_fname = '/imgs/ship-sheet.bmp'
-    roid_fnames = ['/imgs/roid0-sheet.bmp', '/imgs/roid1-sheet.bmp']
-    roidexp_fname = '/imgs/roidexp-sheet.bmp'
+    ship_fname = '/imgs/ship_30_sheet.bmp'
+    roid_fnames = ['/imgs/roid0_30_sheet.bmp', '/imgs/roid1_30_sheet.bmp']
+    roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_starfield.bmp'
     button_L = digitalio.DigitalInOut(board.BUTTON_UP)     # turn left
@@ -126,12 +125,12 @@ class Thing:
 screen = displayio.Group()  # group that holds everything
 display.show(screen) # add main group to display
 
-# get ship sprites
+# ship sprites
 ship_sprites,ship_sprites_pal = adafruit_imageload.load(ship_fname)
 ship_sprites_pal.make_transparent(0)
 shiptg = displayio.TileGrid(ship_sprites, pixel_shader=ship_sprites_pal,
                             width=1, height=1, tile_width=tile_w, tile_height=tile_h)
-# get asteroid sprites
+# asteroid sprites
 roid_spr_pal = []
 for f in roid_fnames: #['/imgs/roid0-allmp.bmp','/imgs/roid1-allmp.bmp']:
     spr,pal = adafruit_imageload.load(f)
@@ -144,7 +143,11 @@ roidexp_sprites_pal.make_transparent(0)
 roidexptg = displayio.TileGrid(roidexp_sprites, pixel_shader=roidexp_sprites_pal,
                                width=1, height=1, tile_width=tile_w, tile_height=tile_h)
 
-#get background image, hubble star field for funhouse
+# shot sprite
+shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
+shot_sprites_pal.make_transparent(0)
+
+# get background image, hubble star field for funhouse
 bgimg, bgpal = adafruit_imageload.load(bg_fname)
 screen.append(displayio.TileGrid(bgimg, pixel_shader=bgpal))
 
@@ -161,11 +164,7 @@ for i in range(num_roids):
     roids.append(roid)
     screen.append(roid.tg)
 
-# shot sprite
-shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
-shot_sprites_pal.make_transparent(0)
-
-# make shot things, hide them 
+# create shot objcts, add to screen, then hide them 
 shots = []
 for i in range(num_shots):
     shottg = displayio.TileGrid(shot_sprites, pixel_shader=shot_sprites_pal,
@@ -180,13 +179,13 @@ ship = Thing( display.width/2, display.height/2, w=tile_w, vx=0.5, vy=0.2, angle
               tilegrid=shiptg, num_tiles=num_ship_tiles)
 screen.append(ship.tg)
 
-# make explosion thing
+# create explosion object, add to screen, but hide it
 roidexp = Thing(display.width/2, display.height/2, w=tile_w, va=0.2,
                  tilegrid=roidexptg, num_tiles=8)
 roidexp.hide() # initially don't show
 screen.append(roidexp.tg)
 
-# finally, add score display
+# finally, add score display to screen
 score_label = label.Label(font=terminalio.FONT, x=5, y=5, color=0x999999, text="000")
 screen.append(score_label)
 
@@ -201,11 +200,10 @@ def roid_hit(roid,hit_ship=False):
     if hit_ship:
         leds.fill(0x9900ff)
         score = max(score + point_ship,0)
-        score_label.text = ("%03d" % score)
     else:
         leds.fill(0xff3300)
         score = max(score + point_roid,0)
-        score_label.text = ("%03d" % score)
+    score_label.text = ("%03d" % score)
     roidexp.hide(False) # show explosion
     roidexp.set_pos(roid) # give it roid's position
     roidexp.va = 0.5  # gotta put back explosions spin
