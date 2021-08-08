@@ -12,8 +12,8 @@ num_roid_tiles = 120
 
 board_type = os.uname().machine
 
+# Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
 if 'MacroPad' in board_type:
-    # Macropad 128x64
     import keypad
     import neopixel
     num_roids = 3
@@ -43,9 +43,8 @@ if 'MacroPad' in board_type:
             if key.key_number == 4:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
         return turning, thrusting
-
+# FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
 elif 'FunHouse' in board_type:
-    # FunHouse 240x240
     import digitalio
     import adafruit_dotstar
     num_roids = 4
@@ -79,6 +78,7 @@ elif 'FunHouse' in board_type:
         if button_F.value:  # THRUST/FIRE!
             thrusting = True
         return turning, thrusting
+# Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
 elif 'Pybadge' in board_type:
     import keypad
     import neopixel
