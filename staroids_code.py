@@ -79,9 +79,40 @@ elif 'FunHouse' in board_type:
         if button_F.value:  # THRUST/FIRE!
             thrusting = True
         return turning, thrusting
+elif 'Pybadge' in board_type:
+    import keypad
+    import neopixel
+    num_roids = 3
+    num_shots = 3
+    shot_life = 0.6
+    accel_max_shot = 5
+    accel_max_ship = 0.2
+    tile_w = 30
+    tile_h = 30
+    ship_fname = '/imgs/ship_30_sheet.bmp'
+    roid_fnames = ['/imgs/roid0_30_sheet.bmp', '/imgs/roid1_30_sheet.bmp']
+    roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
+    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
+    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
+    keys = keypad.ShiftRegisterKeys(clock=board.BUTTON_CLOCK,data=board.BUTTON_OUT,
+                                    latch=board.BUTTON_LATCH, key_count=8,
+                                    value_when_pressed=True)
+    leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
+    # Pybadge, key processing
+    def get_user_input(turning,thrusting):
+        key = keys.events.get()
+        if key:
+            print("key:",key)
+            if key.key_number == 7:  # KEY4 rotate LEFT
+                turning = -0.15 if key.pressed else 0
+            if key.key_number == 4:  # KEY6 rotate RIGHT
+                turning = 0.15 if key.pressed else 0
+            if key.key_number == 1:  # KEY5 THRUST/FIRE!
+                thrusting = key.pressed
+        return turning, thrusting
 else:
-    print("unknown board")
-    
+    raise OSError("unknown board")
+
 # helper object for physics things
 class Thing:
     def __init__(self, x,y, w=0, vx=0,vy=0, angle=0, va=0, tilegrid=None, num_tiles=1):
