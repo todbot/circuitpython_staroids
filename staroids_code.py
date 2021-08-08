@@ -5,15 +5,20 @@ import board, time, math, random
 import displayio, terminalio, bitmaptools
 import adafruit_imageload
 from adafruit_display_text import bitmap_label as label
+import os
 
-board_type = 'macropad' # or 'funhouse'
+num_ship_tiles = 36
+num_roid_tiles = 120
 
-if board_type == 'macropad':
+board_type = os.uname().machine
+
+if 'MacroPad' in board_type:
     # Macropad 128x64
     import keypad
     import neopixel
     num_roids = 3
     num_shots = 3
+    shot_life = 0.4
     accel_max_shot = 4
     accel_max_ship = 0.08
     tile_w = 12
@@ -39,12 +44,13 @@ if board_type == 'macropad':
                 thrusting = key.pressed
         return turning, thrusting
 
-elif board_type == 'funhouse':
+elif 'FunHouse' in board_type:
     # FunHouse 240x240
     import digitalio
     import adafruit_dotstar
-    num_roids = 5
-    num_shots = 5
+    num_roids = 4
+    num_shots = 4
+    shot_life = 1
     accel_max_shot = 5
     accel_max_ship = 0.2
     tile_w = 30
@@ -53,7 +59,7 @@ elif board_type == 'funhouse':
     roid_fnames = ['/imgs/roid0_30_sheet.bmp', '/imgs/roid1_30_sheet.bmp']
     roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_starfield.bmp'
+    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
     button_L = digitalio.DigitalInOut(board.BUTTON_UP)     # turn left
     button_L.switch_to_input(pull=digitalio.Pull.DOWN)
     button_R = digitalio.DigitalInOut(board.BUTTON_DOWN)   # turn right
@@ -64,6 +70,7 @@ elif board_type == 'funhouse':
     # Funhouse, key processing
     def get_user_input(turning,thrusting):
         thrusting = button_F.value
+        turning = 0
         # check on the user
         if button_L.value:  # rotate LEFT
             turning = -0.15 
@@ -75,14 +82,6 @@ elif board_type == 'funhouse':
 else:
     print("unknown board")
     
-hitbox = tile_w//2
-num_ship_tiles = 36
-num_roid_tiles = 120
-
-display = board.DISPLAY
-display.auto_refresh=False
-display.rotation = 0
-
 # helper object for physics things
 class Thing:
     def __init__(self, x,y, w=0, vx=0,vy=0, angle=0, va=0, tilegrid=None, num_tiles=1):
@@ -121,6 +120,11 @@ class Thing:
     def hidden(self):
         return self.tg.hidden
 
+hitbox = tile_w//2
+
+display = board.DISPLAY
+display.auto_refresh=False
+display.rotation = 0
 
 screen = displayio.Group()  # group that holds everything
 display.show(screen) # add main group to display
@@ -132,7 +136,7 @@ shiptg = displayio.TileGrid(ship_sprites, pixel_shader=ship_sprites_pal,
                             width=1, height=1, tile_width=tile_w, tile_height=tile_h)
 # asteroid sprites
 roid_spr_pal = []
-for f in roid_fnames: #['/imgs/roid0-allmp.bmp','/imgs/roid1-allmp.bmp']:
+for f in roid_fnames: 
     spr,pal = adafruit_imageload.load(f)
     pal.make_transparent(0)
     roid_spr_pal.append( (spr,pal) )
@@ -147,14 +151,14 @@ roidexptg = displayio.TileGrid(roidexp_sprites, pixel_shader=roidexp_sprites_pal
 shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
 shot_sprites_pal.make_transparent(0)
 
-# get background image, hubble star field for funhouse
+# get background image
 bgimg, bgpal = adafruit_imageload.load(bg_fname)
 screen.append(displayio.TileGrid(bgimg, pixel_shader=bgpal))
 
 # create all the asteroids, add them to the screen
 roids = []
 for i in range(num_roids):
-    vx,vy = random.uniform(-0.5,0.5), random.uniform(-0.5,0.5 )
+    vx,vy = random.uniform(-0.5,0.5), random.uniform(-0.2,0.2 ) # more x than y
     spr,pal = roid_spr_pal[ i % len(roid_spr_pal) ]
     roidtg = displayio.TileGrid(spr, pixel_shader=pal, width=1, height=1,
                                 tile_width=tile_w, tile_height=tile_h)
@@ -256,7 +260,7 @@ while True:
     # update shot positions, age them out
     for shot in shots:
         shot.update_pos()
-        if time.monotonic() - shot.time > 0.4: # funhouse 1.0
+        if time.monotonic() - shot.time > shot_life: 
             shot.hide()
             
     # update position of our single explosion thing
@@ -277,8 +281,8 @@ while True:
     if time.monotonic() - last_led_time > 0.5:
         last_led_time = time.monotonic()
         leds.fill(0) # age out "you were hit" LEDs
-        # macropad
-        leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
+        if 'MacroPad' in board_type:
+            leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
         
         # roid = roids[0]
         # print("roid0: %d,%d vxy:%1.2f,%1.2f, a:%1.1f, %d" %
