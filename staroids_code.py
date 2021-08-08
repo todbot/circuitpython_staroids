@@ -10,6 +10,7 @@ import os
 num_ship_tiles = 36
 num_roid_tiles = 120
 
+# -------- board detection -------------------------------------------
 board_type = os.uname().machine
 
 # Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
@@ -112,6 +113,8 @@ elif 'Pybadge' in board_type:
         return turning, thrusting
 else:
     raise OSError("unknown board")
+
+# -------- board detection end ---------------------------------------
 
 # helper object for physics things
 class Thing:
