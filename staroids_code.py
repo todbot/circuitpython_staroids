@@ -10,7 +10,6 @@ import os
 num_ship_tiles = 36
 num_roid_tiles = 120
 
-# -------- board detection -------------------------------------------
 board_type = os.uname().machine
 
 # Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
@@ -87,12 +86,12 @@ elif 'Pybadge' in board_type:
     num_shots = 3
     shot_life = 0.6
     accel_max_shot = 5
-    accel_max_ship = 0.2
-    tile_w = 30
-    tile_h = 30
-    ship_fname = '/imgs/ship_30_sheet.bmp'
-    roid_fnames = ['/imgs/roid0_30_sheet.bmp', '/imgs/roid1_30_sheet.bmp']
-    roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
+    accel_max_ship = 0.1
+    tile_w = 20
+    tile_h = 20
+    ship_fname = '/imgs/ship_20_sheet.bmp'
+    roid_fnames = ['/imgs/roid0_20_sheet.bmp', '/imgs/roid1_20_sheet.bmp']
+    roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
     keys = keypad.ShiftRegisterKeys(clock=board.BUTTON_CLOCK,data=board.BUTTON_OUT,
@@ -113,8 +112,6 @@ elif 'Pybadge' in board_type:
         return turning, thrusting
 else:
     raise OSError("unknown board")
-
-# -------- board detection end ---------------------------------------
 
 # helper object for physics things
 class Thing:
