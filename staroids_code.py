@@ -50,7 +50,7 @@ elif 'FunHouse' in board_type:
     num_roids = 4
     num_shots = 4
     shot_life = 1
-    accel_max_shot = 5
+    accel_max_shot = 4
     accel_max_ship = 0.2
     tile_w = 30
     tile_h = 30
@@ -84,9 +84,9 @@ elif 'Pybadge' in board_type:
     import neopixel
     num_roids = 3
     num_shots = 3
-    shot_life = 0.6
-    accel_max_shot = 5
-    accel_max_ship = 0.1
+    shot_life = 0.5
+    accel_max_shot = 3
+    accel_max_ship = 0.06
     tile_w = 20
     tile_h = 20
     ship_fname = '/imgs/ship_20_sheet.bmp'
@@ -102,11 +102,10 @@ elif 'Pybadge' in board_type:
     def get_user_input(turning,thrusting):
         key = keys.events.get()
         if key:
-            print("key:",key)
             if key.key_number == 7:  # KEY4 rotate LEFT
-                turning = -0.15 if key.pressed else 0
+                turning = -0.12 if key.pressed else 0
             if key.key_number == 4:  # KEY6 rotate RIGHT
-                turning = 0.15 if key.pressed else 0
+                turning = 0.12 if key.pressed else 0
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
         return turning, thrusting
@@ -139,6 +138,8 @@ class Thing:
     def set_pos(self,obj):
         self.x, self.y = obj.x, obj.y
         self.vx, self.vy, self.va = obj.vx, obj.vy, obj.va
+#    def angle_from_index():
+#        return self.tg[0]
     def is_hit(self, obj):
         # try doing all as int math for speed
         if (int(self.x) > int(obj.x)-hitbox and int(self.x) < int(obj.x)+hitbox and
@@ -150,6 +151,12 @@ class Thing:
     @property
     def hidden(self):
         return self.tg.hidden
+    # ship angle seems wrong for shots at times (floating point errors? or me?),
+    # so this computes a new angle based off the very coarse tile grid rotation
+    # I *think* it fixes the weird "off-axis" shots I was seeing 
+    @property
+    def angle_from_tile_index(self): 
+        return self.tg[0] * (2*math.pi / self.num_tiles)
 
 hitbox = tile_w//2
 
@@ -248,12 +255,12 @@ def roid_hit(roid,hit_ship=False):
     roid.y = random.randint(0,display.height)
 
 # main loop
-last_led_time = 0
-last_roid_time = 0
-shot_time = 0
-shot_index = -1
+last_led_time = 0   # when was LED age last checked
+last_roid_time = 0  # when was asteroid age last checked  
+shot_time = 0       # when did shooting start
+shot_index = -1     # which shot are we on
 turning = 0 # neg if currrently turning left, pos if turning right
-thrusting = False 
+thrusting = False   # true if thrusting + firing
 while True:
     now = time.monotonic()
 
@@ -263,15 +270,16 @@ while True:
     ship.angle = ship.angle + turning
     if thrusting: 
         ship.accelerate( ship.angle, accel_max_ship) 
-        if now - shot_time > 0.2:
+        if now - shot_time > 0.2:  # Fire ze missiles
             shot_time = now
-            print("fire")
+            print("fire", ship.angle, ship.tg[0], ship.angle_from_tile_index)
             shot_index = (shot_index+1) % len(shots)
             shot = shots[shot_index]
             if shot.hidden:  # we can use this shot
                 shot.x, shot.y = ship.x,ship.y # put shot at ship pos
                 shot.vx,shot.vy = 0,0  # we accelerate it later
                 shot.time = time.monotonic() # newborn!
+                #shot.accelerate(ship.angle_from_tile_index, accel_max_shot) 
                 shot.accelerate(ship.angle, accel_max_shot) 
                 shot.hide(False) # show it off
 
@@ -308,8 +316,10 @@ while True:
     display.refresh(target_frames_per_second=30)
     # time.sleep(0.0015)  # sets framerate
 
+    #leds[0:] = [[max(i-10,0) for i in l] for l in leds] # dim all LEDs
+
     # LED aging and debug
-    if time.monotonic() - last_led_time > 0.5:
+    if time.monotonic() - last_led_time > 0.4:
         last_led_time = time.monotonic()
         leds.fill(0) # age out "you were hit" LEDs
         if 'MacroPad' in board_type:
