@@ -6,7 +6,8 @@ Works with FunHouse and MacroPad and Pybadge.
 <img src="./docs/staroids_funhouse_macropad1.jpg" />
 
 ## Game rules:
-- You have three buttons: Turn Left, Turn Right, and Thrust/Fire
+- You control a spaceship in an asteroid field
+- Your ship has three controls: Turn Left, Turn Right, and Thrust/Fire
 - You get +1 point for every asteroid shot
 - You get -3 point every time an asteroid hits your ship
 - Game ends when you get bored or the boss comes walking by
