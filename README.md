@@ -3,7 +3,7 @@
 Something like **Asteroids** (but not really), done in CircuitPython.
 Works with FunHouse and MacroPad and Pybadge.
 
-<img src="./docs/staroids_funhouse_macropad1.jpg" />
+<img src="./docs/staroids_family1.jpg" />
 
 ## Game rules:
 - You control a spaceship in an asteroid field
