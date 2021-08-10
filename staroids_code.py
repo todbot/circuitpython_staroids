@@ -131,7 +131,7 @@ class Thing:
         self.y = (self.y + self.vy) % display.height # and left-right
         self.tg.x = int(self.x) - self.w//2 # we think in zero-centered things
         self.tg.y = int(self.y) - self.w//2 # but tilegrids are top-left zero'd
-        #self.angle = (self.angle + self.va) % (math.pi*2)  # if object is spinning
+        #self.angle = (self.angle + self.va) % (math.pi*2)  # if object is spinning & constrain
         self.angle += self.va   # if object is spinning
         # get a tilegrid index based on angle and number of tiles total
         i = round(math.degrees(self.angle) / (360 / self.num_tiles)) % self.num_tiles
@@ -279,7 +279,7 @@ while True:
                 shot.vx,shot.vy = 0,0  # we accelerate it later
                 shot.time = time.monotonic() # newborn!
                 #shot.accelerate(ship.angle_from_tile_index, accel_max_shot) 
-                shot.accelerate(ship.angle, accel_max_shot) 
+                shot.accelerate(ship.angle_from_tile_index, accel_max_shot) 
                 shot.hide(False) # show it off
 
     # update ship position
