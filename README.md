@@ -52,7 +52,7 @@ Given a set of square images named:
 You want sprite sheets:
 - ship_sheet.bmp  -- two sets (coast + thrust) of 36 10-degree rotations in one palette BMP
 - roid0_sheet.bmp -- 120 3-degree rotations in one palette BMP
-- roid1_sheet.bmp -- 120 3-degree rotations in one palette BMP
+-sta roid1_sheet.bmp -- 120 3-degree rotations in one palette BMP
 - roidexp_sheet.bmp -- 8 45-degree rotations in one palette BMP
 
 The entire set of ImageMagick commands to create the rotations for sprite sheet are,

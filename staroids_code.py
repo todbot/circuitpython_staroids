@@ -131,15 +131,14 @@ class Thing:
         self.y = (self.y + self.vy) % display.height # and left-right
         self.tg.x = int(self.x) - self.w//2 # we think in zero-centered things
         self.tg.y = int(self.y) - self.w//2 # but tilegrids are top-left zero'd
-        self.angle += self.va  # if object is spinning
+        #self.angle = (self.angle + self.va) % (math.pi*2)  # if object is spinning
+        self.angle += self.va   # if object is spinning
         # get a tilegrid index based on angle and number of tiles total
-        i = int(math.degrees(self.angle) / (360 / self.num_tiles)) % self.num_tiles
+        i = round(math.degrees(self.angle) / (360 / self.num_tiles)) % self.num_tiles
         self.tg[0] = i + (alt_sprite_index * self.num_tiles)
     def set_pos(self,obj):
         self.x, self.y = obj.x, obj.y
         self.vx, self.vy, self.va = obj.vx, obj.vy, obj.va
-#    def angle_from_index():
-#        return self.tg[0]
     def is_hit(self, obj):
         # try doing all as int math for speed
         if (int(self.x) > int(obj.x)-hitbox and int(self.x) < int(obj.x)+hitbox and
