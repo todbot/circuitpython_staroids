@@ -49,17 +49,18 @@ Given a set of square images named:
 - roid1.png - another asteroid shape
 - roidexp.png - an exploding asteroid
 
-You want sprite sheets:
+and you want to create the sprite sheets:
 - ship_sheet.bmp  -- two sets (coast + thrust) of 36 10-degree rotations in one palette BMP
 - roid0_sheet.bmp -- 120 3-degree rotations in one palette BMP
--sta roid1_sheet.bmp -- 120 3-degree rotations in one palette BMP
+- staroid1_sheet.bmp -- 120 3-degree rotations in one palette BMP
 - roidexp_sheet.bmp -- 8 45-degree rotations in one palette BMP
 
-The entire set of ImageMagick commands to create the rotations for sprite sheet are,
-as a single shell script is:
+The entire set of ImageMagick commands to create the sprite sheet of rotations,
+as a single shell script is below.
 
 For MacroPad, the sprites had to be re-drawn as 12px square tile instead of 30px.
-The were drawn with https://www.pixilart.com/art/staroids-sprites-12px-58e5853d4c2b0ef
+The were drawn with https://www.pixilart.com/art/staroids-sprites-12px-58e5853d4c2b0ef.
+All other sprites were drawn in Pixelmator.
 
 ```shell
 # ship0 (coasting)
