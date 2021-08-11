@@ -21,6 +21,7 @@ if 'MacroPad' in board_type:
     shot_life = 0.4
     accel_max_shot = 4
     accel_max_ship = 0.08
+    vmax = 3
     tile_w = 12
     tile_h = 12
     ship_fname = '/imgs/ship_12_sheet.bmp'
@@ -52,6 +53,7 @@ elif 'FunHouse' in board_type:
     shot_life = 1
     accel_max_shot = 4
     accel_max_ship = 0.2
+    vmax = 5
     tile_w = 30
     tile_h = 30
     ship_fname = '/imgs/ship_30_sheet.bmp'
@@ -66,18 +68,20 @@ elif 'FunHouse' in board_type:
     button_F = digitalio.DigitalInOut(board.BUTTON_SELECT) # thrust!
     button_F.switch_to_input(pull=digitalio.Pull.DOWN)
     leds = adafruit_dotstar.DotStar(board.DOTSTAR_CLOCK,board.DOTSTAR_DATA,5,brightness=0.1)
+    pwm = None
     # Funhouse, key processing
     def get_user_input(turning,thrusting):
         thrusting = button_F.value
         turning = 0
         # check on the user
         if button_L.value:  # rotate LEFT
-            turning = -0.15 
+            turning = -0.15
         if button_R.value:  # rotate RIGHT
             turning = 0.15
         if button_F.value:  # THRUST/FIRE!
             thrusting = True
         return turning, thrusting
+    
 # Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
 elif 'Pybadge' in board_type:
     import keypad
@@ -87,6 +91,7 @@ elif 'Pybadge' in board_type:
     shot_life = 0.5
     accel_max_shot = 3
     accel_max_ship = 0.06
+    vmax = 3
     tile_w = 20
     tile_h = 20
     ship_fname = '/imgs/ship_20_sheet.bmp'
@@ -119,7 +124,7 @@ class Thing:
         self.vx,self.vy = vx,vy # initial x,y velocity
         self.angle = angle # angle object is rotation
         self.va = va   # initial angular velocity
-        self.vmax = 3  # maximum velocity FunHouse 4
+        self.vmax = vmax  # max velocity. 3 on pybadge, 4 on FunHouse 
         self.tg = tilegrid
         self.num_tiles = num_tiles
         self.time = 0
