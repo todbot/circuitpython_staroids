@@ -1,9 +1,14 @@
 # CircuitPython Staroids
 
 Something like **Asteroids** (but not really), done in CircuitPython.
-Works with FunHouse and MacroPad and Pybadge.
+Works with [FunHouse](https://www.adafruit.com/product/4985), [MacroPad](https://www.adafruit.com/product/5128)
+and [Pybadge](https://www.adafruit.com/product/4200).
 
 <img src="./docs/staroids_family1.jpg" />
+
+https://user-images.githubusercontent.com/274093/129097480-3be3b302-d7ba-4690-951a-0822a2933bb3.mp4
+
+(And [@jedgarpark](https://github.com/jedgarpark) modified the [Pybadge version to have sound as seen in this video](https://www.youtube.com/watch?v=sC_fLp5CfTg)!)
 
 ## Game rules:
 - You control a spaceship in an asteroid field
