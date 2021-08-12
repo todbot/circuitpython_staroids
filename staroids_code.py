@@ -13,7 +13,7 @@ num_roid_tiles = 120
 board_type = os.uname().machine
 
 # Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
-if 'MacroPad' in board_type:
+if 'Macropad' in board_type:
     import keypad
     import neopixel
     num_roids = 3
