@@ -113,6 +113,39 @@ elif 'Pybadge' in board_type:
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
         return turning, thrusting
+
+# Clue 240x240 color display, A/B for L/R, touch pad 2 (D2) for Thrust/Fire
+elif 'clue' in board_type.lower():
+    import keypad
+    import neopixel
+    import touchio
+    num_roids = 3
+    num_shots = 3
+    shot_life = 0.5
+    accel_max_shot = 3
+    accel_max_ship = 0.06
+    vmax = 3
+    tile_w = 20
+    tile_h = 20
+    ship_fname = '/imgs/ship_20_sheet.bmp'
+    roid_fnames = ['/imgs/roid0_20_sheet.bmp', '/imgs/roid1_20_sheet.bmp']
+    roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
+    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
+    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field
+    shooty = touchio.TouchIn(board.D2)
+    keys = keypad.Keys([board.BUTTON_A, board.BUTTON_B], value_when_pressed=False, pull=True)
+    leds = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.1)
+    # Clue, key processing
+    def get_user_input(turning,thrusting):
+        key = keys.events.get()
+        if key:
+            if key.key_number == 0:  # A rotate LEFT
+                turning = -0.15 if key.pressed else 0
+            if key.key_number == 1:  # B rotate RIGHT
+                turning = 0.15 if key.pressed else 0
+        thrusting = shooty.value
+        return turning, thrusting
+    
 else:
     raise OSError("unknown board")
 
