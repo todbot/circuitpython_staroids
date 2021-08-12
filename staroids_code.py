@@ -10,6 +10,13 @@ import os
 num_ship_tiles = 36
 num_roid_tiles = 120
 
+point_roid = 1
+point_ship = -3
+
+score = 0
+
+# --- board params -----------------------------------------------------
+
 board_type = os.uname().machine
 
 # Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
@@ -29,12 +36,14 @@ if 'Macropad' in board_type:
     roidexp_fname = '/imgs/roidexp_12_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_stars_mono.bmp'
+    display = board.DISPLAY
+    display.rotation = 0
     leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.1)
     # stolen from adafruit_macropad, thx kattni!
     keypins = [getattr(board, "KEY%d" % (num + 1)) for num in (list(range(12)))]
     keys = keypad.Keys(keypins, value_when_pressed=False, pull=True)
     # Macropad, key processing
-    def get_user_input(turning,thrusting):
+    def get_user_input(turning,thrusting,firing):
         key = keys.events.get()
         if key:
             if key.key_number == 3:  # KEY4 rotate LEFT
@@ -43,7 +52,8 @@ if 'Macropad' in board_type:
                 turning = 0.15 if key.pressed else 0
             if key.key_number == 4:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-        return turning, thrusting
+            firing = thrusting  # only using 3 keys
+        return turning, thrusting, firing
 # FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
 elif 'FunHouse' in board_type:
     import digitalio
@@ -61,6 +71,8 @@ elif 'FunHouse' in board_type:
     roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
+    display = board.DISPLAY
+    display.rotation = 0
     button_L = digitalio.DigitalInOut(board.BUTTON_UP)     # turn left
     button_L.switch_to_input(pull=digitalio.Pull.DOWN)
     button_R = digitalio.DigitalInOut(board.BUTTON_DOWN)   # turn right
@@ -69,7 +81,7 @@ elif 'FunHouse' in board_type:
     button_F.switch_to_input(pull=digitalio.Pull.DOWN)
     leds = adafruit_dotstar.DotStar(board.DOTSTAR_CLOCK,board.DOTSTAR_DATA,5,brightness=0.1)
     # Funhouse, key processing
-    def get_user_input(turning,thrusting):
+    def get_user_input(turning,thrusting,firing):
         thrusting = button_F.value
         turning = 0
         # check on the user
@@ -79,7 +91,8 @@ elif 'FunHouse' in board_type:
             turning = 0.15
         if button_F.value:  # THRUST/FIRE!
             thrusting = True
-        return turning, thrusting
+        firing = thrusting  # only using 3 keys!
+        return turning, thrusting, firing
     
 # Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
 elif 'Pybadge' in board_type:
@@ -98,12 +111,14 @@ elif 'Pybadge' in board_type:
     roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
+    display = board.DISPLAY
+    display.rotation = 0
     keys = keypad.ShiftRegisterKeys(clock=board.BUTTON_CLOCK,data=board.BUTTON_OUT,
                                     latch=board.BUTTON_LATCH, key_count=8,
                                     value_when_pressed=True)
     leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
     # Pybadge, key processing
-    def get_user_input(turning,thrusting):
+    def get_user_input(turning,thrusting,firing):
         key = keys.events.get()
         if key:
             if key.key_number == 7:  # KEY4 rotate LEFT
@@ -112,7 +127,8 @@ elif 'Pybadge' in board_type:
                 turning = 0.12 if key.pressed else 0
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-        return turning, thrusting
+            firing = thrusting  # only using 3 keys
+        return turning, thrusting, firing
 
 # Clue 240x240 color display, A/B for L/R, touch pad 2 (D2) for Thrust/Fire
 elif 'clue' in board_type.lower():
@@ -132,11 +148,13 @@ elif 'clue' in board_type.lower():
     roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
     shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
     bg_fname = '/imgs/bg_starfield.bmp' # hubble star field
+    display = board.DISPLAY
+    display.rotation = 0
     shooty = touchio.TouchIn(board.D2)
     keys = keypad.Keys([board.BUTTON_A, board.BUTTON_B], value_when_pressed=False, pull=True)
     leds = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=0.1)
     # Clue, key processing
-    def get_user_input(turning,thrusting):
+    def get_user_input(turning,thrusting,firing):
         key = keys.events.get()
         if key:
             if key.key_number == 0:  # A rotate LEFT
@@ -144,10 +162,13 @@ elif 'clue' in board_type.lower():
             if key.key_number == 1:  # B rotate RIGHT
                 turning = 0.15 if key.pressed else 0
         thrusting = shooty.value
-        return turning, thrusting
-    
+        firing = thrusting  # only using 3 keys!
+        return turning, thrusting, firing
+
 else:
     raise OSError("unknown board")
+
+# --- board params end -------------------------------------------------
 
 # helper object for physics things
 class Thing:
@@ -191,14 +212,13 @@ class Thing:
     # so this computes a new angle based off the very coarse tile grid rotation
     # I *think* it fixes the weird "off-axis" shots I was seeing 
     @property
-    def angle_from_tile_index(self): 
+    def angle_quantized(self): 
         return self.tg[0] * (2*math.pi / self.num_tiles)
 
 hitbox = tile_w//2
 
 display = board.DISPLAY
 display.auto_refresh=False
-display.rotation = 0
 
 screen = displayio.Group()  # group that holds everything
 display.show(screen) # add main group to display
@@ -267,10 +287,6 @@ screen.append(roidexp.tg)
 score_label = label.Label(font=terminalio.FONT, x=5, y=5, color=0x999999, text="000")
 screen.append(score_label)
 
-score = 0
-point_roid = 1
-point_ship = -3
-
 # see if asteroid was hit and by what
 def roid_hit(roid,hit_ship=False):
     global score
@@ -290,33 +306,35 @@ def roid_hit(roid,hit_ship=False):
     roid.x = random.randint(0,display.width)
     roid.y = random.randint(0,display.height)
 
+# ----------------------------------------------------------------------
 # main loop
 last_led_time = 0   # when was LED age last checked
 last_roid_time = 0  # when was asteroid age last checked  
 shot_time = 0       # when did shooting start
 shot_index = -1     # which shot are we on
 turning = 0 # neg if currrently turning left, pos if turning right
-thrusting = False   # true if thrusting + firing
+thrusting = False   # true if thrusting 
+firing = False      # true if firing
 while True:
     now = time.monotonic()
 
-    turning, thrusting = get_user_input(turning,thrusting)
+    turning, thrusting, firing = get_user_input(turning,thrusting,firing)
 
     # update ship state
     ship.angle = ship.angle + turning
     if thrusting: 
-        ship.accelerate( ship.angle, accel_max_ship) 
+        ship.accelerate( ship.angle, accel_max_ship)
+    if firing:
         if now - shot_time > 0.2:  # Fire ze missiles
             shot_time = now
-            print("fire", ship.angle, ship.tg[0], ship.angle_from_tile_index)
+            print("fire", ship.angle, ship.tg[0], ship.angle_quantized)
             shot_index = (shot_index+1) % len(shots)
             shot = shots[shot_index]
             if shot.hidden:  # we can use this shot
                 shot.x, shot.y = ship.x,ship.y # put shot at ship pos
                 shot.vx,shot.vy = 0,0  # we accelerate it later
                 shot.time = time.monotonic() # newborn!
-                #shot.accelerate(ship.angle_from_tile_index, accel_max_shot) 
-                shot.accelerate(ship.angle_from_tile_index, accel_max_shot) 
+                shot.accelerate(ship.angle_quantized, accel_max_shot) 
                 shot.hide(False) # show it off
 
     # update ship position
@@ -350,17 +368,17 @@ while True:
         roidexp.hide() # don't need explosion any more
 
     display.refresh(target_frames_per_second=30)
-    # time.sleep(0.0015)  # sets framerate
 
-    #leds[0:] = [[max(i-10,0) for i in l] for l in leds] # dim all LEDs
+    #leds[0:] = [[max(i-10,0) for i in l] for l in leds]  # dim all LEDs
 
     # LED aging and debug
     if time.monotonic() - last_led_time > 0.4:
         last_led_time = time.monotonic()
         leds.fill(0) # age out "you were hit" LEDs
-        if 'Macropad' in board_type:
+        if 'Macropad' in board_type:  # FIXME figure out way to make per-board
             leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
         
+        # debug
         # roid = roids[0]
         # print("roid0: %d,%d vxy:%1.2f,%1.2f, a:%1.1f, %d" %
         #       (roid.x,roid.y, roid.vx,roid.vy, roid.angle, roid.tg[0]))
