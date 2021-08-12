@@ -44,9 +44,26 @@ If you're interested in how to do stuff in CircuitPython, this code does some th
 - Smooth rotation animation with sprite sheets
 - Simple 2D physics engine (velocity & acceleration, okay enough for this game)
 
+
+## Implementation notes
+
+(Notes for myself mostly)
+
+- Ship, Asteroids, Shots (`Thing` objects) are in a floating-point (x,y) space,
+while its corresponding `displayio.TileGrid` is integer (x,y) space. This allows a `Thing`
+to accumulate its (x,y) velocity & acceleration without weird int->float truncations.
+- Similarly, `Thing` rotation angle is floatping point but gets quantized to the
+sprite sheet's tile number.
+- Per-board settings is useful not just for technical differences (sprite sizes),
+but also for gameplay params (accel_max, vmax)
+- Hitbox calculations are done on floating-point (x,y) of the `Thing` objects,
+but converted to int before hitbox calculation to hopefully speed things up.
+
+
+
 ## How the sprite sheets were made
 
-(This section is mostly notes for myself)
+(Notes for myself mostly)
 
 Given a set of square images named:
 - ship0.png - our spaceship coasting
