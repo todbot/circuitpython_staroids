@@ -325,7 +325,7 @@ while True:
     if time.monotonic() - last_led_time > 0.4:
         last_led_time = time.monotonic()
         leds.fill(0) # age out "you were hit" LEDs
-        if 'MacroPad' in board_type:
+        if 'Macropad' in board_type:
             leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
         
         # roid = roids[0]
