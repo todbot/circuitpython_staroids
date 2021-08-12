@@ -68,7 +68,6 @@ elif 'FunHouse' in board_type:
     button_F = digitalio.DigitalInOut(board.BUTTON_SELECT) # thrust!
     button_F.switch_to_input(pull=digitalio.Pull.DOWN)
     leds = adafruit_dotstar.DotStar(board.DOTSTAR_CLOCK,board.DOTSTAR_DATA,5,brightness=0.1)
-    pwm = None
     # Funhouse, key processing
     def get_user_input(turning,thrusting):
         thrusting = button_F.value
