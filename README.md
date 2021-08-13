@@ -14,12 +14,14 @@ https://user-images.githubusercontent.com/274093/129097480-3be3b302-d7ba-4690-95
 (And [@jedgarpark](https://github.com/jedgarpark) modified the [Pybadge version to have sound as seen in this video](https://www.youtube.com/watch?v=sC_fLp5CfTg)!)
 
 ## Game rules:
+
 - You control a spaceship in an asteroid field
 - Your ship has three controls: Turn Left, Turn Right, and Thrust/Fire
 - You get +1 point for every asteroid shot
 - You get -3 point every time an asteroid hits your ship
 - Game ends when you get bored or the boss comes walking by
 - If you hit an asteroid, LEDs flash orange. If your ship is hit, LEDs flash purply.
+- No sound by default (as many boards do not support WAV playback)
 
 ## Installation
 
@@ -42,8 +44,8 @@ $ cp -X staroids_code.py /Volumes/CIRCUITPY/code.py
 
 If you're interested in how to do stuff in CircuitPython, this code does things
 that might be useful. Those include:
-- Detecting which board is being used and adjusting I/O & params accordingly
-- Dealing with almost all possible LED and button input techniques in CircuitPython
+- Detecting which board is being used and adjusting I/O & game params accordingly
+- Dealing with almost all possible LED & button input techniques in CircuitPython
 - Timing without using `time.sleep()`
 - Sprite sheet animation with `displayio`
 - Smooth rotation animation with sprite sheets
@@ -53,19 +55,24 @@ that might be useful. Those include:
 ## Implementation notes
 
 (Notes for myself mostly)
-- Rotation is accomplished using sprite sheets containing possible rotations of the sprite.
-For the ship that is 36 rotation images tiles at 10-degrees apart. For the asteroids, that's 120 rotation image tiles at 3 degrees apart. The rotated images were created using ImageMagick
+
+- Sprite rotation is accomplished using sprite "sheets" containing all possible
+rotations of the sprite. For the ship that is 36 rotation images tiles 
+at 10-degrees apart. For the asteroids, that's 120 rotation image tiles
+at 3 degrees apart. The rotated images were created using ImageMagick
 on a single sprite.
 
 - A simpler version of [this sprite rotation code can be found in this gist](https://gist.github.com/todbot/92373f93db9da0fca5ca4adee8d7d75b) and [this video demo](https://twitter.com/todbot/status/1423331295384399883).
 
-- Another way to do this is via `bitmaptools.rotozoom()` but it seemed like it would not perform well
-on boards with chips with no floating-point hardware (RP2040, ESP32-S2).
-You can find that [demo rotozoom code in this gist](https://gist.github.com/todbot/8b524daba51bd84c92799a2401324521) and [this video demo](https://twitter.com/todbot/status/1423078302391037953).
+- Another way to do this is via `bitmaptools.rotozoom()`. This technique worked but
+seemed like it would not perform well on boards with chips with no floating-point
+hardware (RP2040, ESP32-S2). You can find that [demo rotozoom code in this gist](https://gist.github.com/todbot/8b524daba51bd84c92799a2401324521)
+and [this video demo](https://twitter.com/todbot/status/1423078302391037953).
 
 - Ship, Asteroids, Shots (`Thing` objects) are in a floating-point (x,y) space,
-while its corresponding `displayio.TileGrid` is integer (x,y) space. This allows a `Thing`
-to accumulate its (x,y) velocity & acceleration without weird int->float truncations.
+while its corresponding `displayio.TileGrid` is integer (x,y) space. This allows
+a `Thing` to accumulate its (x,y) velocity & acceleration without weird
+int->float truncations.
 
 - Similarly, `Thing` rotation angle is floatping point but gets quantized to the
 sprite sheet's tile number.
@@ -78,9 +85,9 @@ but converted to int before hitbox calculation to hopefully speed things up.
 
 - Sprite sizes (e.g. 30x30 pixels), sprite bit-depth (1-bit for these sprits),
 and quantity on screen (5 asteroids, 4 shots) greatly influences framerate.
-For a game like Asteroids where FPS needs to be high, you have to balance this carefully.
-To see this, try converting the ship spritesheet to a 4-bit (16-color) BMP and watch the
-framerate drop. Or you might run out of memory.
+For a game like Asteroids where FPS needs to be high, you have to balance this
+carefully. To see this, try converting the ship spritesheet to a 4-bit
+(16-color) BMP and watch the framerate drop. Or you might run out of memory.
 
 
 ## How the sprite sheets were made
