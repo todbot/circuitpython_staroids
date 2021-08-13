@@ -40,8 +40,11 @@ $ cp -X staroids_code.py /Volumes/CIRCUITPY/code.py
 
 ## Code techniques demonstrated
 
-If you're interested in how to do stuff in CircuitPython, this code does some things that might be useful. Those include:
+If you're interested in how to do stuff in CircuitPython, this code does things
+that might be useful. Those include:
 - Detecting which board is being used and adjusting I/O & params accordingly
+- Dealing with almost all possible LED and button input techniques in CircuitPython
+- Timing without using `time.sleep()`
 - Sprite sheet animation with `displayio`
 - Smooth rotation animation with sprite sheets
 - Simple 2D physics engine (velocity & acceleration, okay enough for this game)
