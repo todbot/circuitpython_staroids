@@ -4,6 +4,7 @@ Something like **Asteroids**, done in CircuitPython.
 Works with [FunHouse](https://www.adafruit.com/product/4985),
 [MacroPad](https://www.adafruit.com/product/5128),
 [Pybadge](https://www.adafruit.com/product/4200),
+[EdgeBadge](https://www.adafruit.com/product/4400),
 [CLUE](https://www.adafruit.com/product/4500),
 and [Pygamer](https://www.adafruit.com/product/4242).
 
