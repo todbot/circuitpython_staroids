@@ -6,11 +6,13 @@ import adafruit_imageload
 from adafruit_display_text import bitmap_label as label
 import os
 
-num_ship_tiles = 36
-num_roid_tiles = 120
+enable_sound = False  # set to True to enable experimental sound support (Pygamer)
 
-point_roid = 1
-point_ship = -3
+num_ship_tiles = 36   # how many rotations of the ship sprite
+num_roid_tiles = 120  # how many rotations of the asteroid sprites
+
+point_roid = 1        # points for shooting an asteroid
+point_ship = -3       # points for getting hit by an asteroid
 
 score = 0
 
@@ -20,6 +22,10 @@ roidexp_fname = '/imgs/roidexp_%d_sheet.bmp'
 roid_fnames = ['/imgs/roid0_%d_sheet.bmp', '/imgs/roid1_%d_sheet.bmp']
 shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller 3x3 tile
 bg_fname = '/imgs/bg_starfield.bmp' # hubble star field by default (funhouse/pygamer)
+
+# sound wav files, if 'enable_sound=True' (only for Pygamer currently)
+pew_wav_fname = "/snds/pew1_11k.wav"
+exp_wav_fname = "/snds/exp1_11k.wav"
 
 # --- board params -----------------------------------------------------
 
@@ -55,6 +61,9 @@ if 'macropad' in board_type.lower():
                 thrusting = key.pressed
         firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
+    # Macropad, sound handling
+    def play_sound(s): # s=0 pew, s = 1 exp
+        pass # not implemented
 
 # FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
 elif 'funhouse' in board_type.lower():
@@ -89,6 +98,9 @@ elif 'funhouse' in board_type.lower():
             thrusting = True
         firing = thrusting  # only using 3 keys!
         return turning, thrusting, firing
+    # Funhouse, sound handling
+    def play_sound(s): # s=0 pew, s = 1 exp
+        pass # not implemented
     
 # Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
 elif 'pybadge' in board_type.lower():
@@ -119,6 +131,9 @@ elif 'pybadge' in board_type.lower():
                 thrusting = key.pressed
         firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
+    # Pybadge, sound handling
+    def play_sound(s): # s=0 pew, s = 1 exp
+        pass # not implemented
 
 # Pygamer 160x128 color display, analog pad L/R for L/R, A for Thrust/Fire
 elif 'pygamer' in board_type.lower():
@@ -141,14 +156,21 @@ elif 'pygamer' in board_type.lower():
     joystick_x = analogio.AnalogIn(board.JOYSTICK_X)
     leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
     rainbowing = False # secret rainbowing mode
+    if enable_sound:
+        import audiocore, audioio, digitalio
+        speaker_enable = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+        speaker_enable.switch_to_output(value=True)
+        wav_pew = audiocore.WaveFile(open(pew_wav_fname,"rb"))
+        wav_exp = audiocore.WaveFile(open(exp_wav_fname,"rb"))
+        audio = audioio.AudioOut(board.SPEAKER)
     # Pygamer, key processing
     def get_user_input(turning,thrusting,firing):
-        global rainbowing
+        global rainbowing, enable_sound
         key = keys.events.get()
         if key:
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-            if key.key_number == 3:  # select key
+            if key.key_number == 3:  # SELECT key
                 rainbowing = key.pressed
         if rainbowing:  # rainbow mode!
             c = rainbowio.colorwheel( time.monotonic()*100 % 255 )
@@ -163,6 +185,11 @@ elif 'pygamer' in board_type.lower():
         if joystick_x.value > 55000: turning = 0.12
         if joystick_x.value < 1000: turning = -0.12
         return turning, thrusting, firing
+    # Pygame, sound handling
+    def play_sound(s): # s=0 pew, s = 1 exp
+        if enable_sound:
+            if s==0: audio.play(wav_pew)
+            if s==1: audio.play(wav_exp)
 
 # Clue 240x240 color display, A/B for L/R, touch pad 2 (D2) for Thrust/Fire
 elif 'clue' in board_type.lower():
@@ -192,6 +219,9 @@ elif 'clue' in board_type.lower():
         thrusting = shooty.value
         firing = thrusting  # only using 3 keys!
         return turning, thrusting, firing
+    # Clue, sound handling
+    def play_sound(s): # s=0 pew, s = 1 exp
+        pass # not implemented
 
 else:
     raise OSError("unknown board")
@@ -319,6 +349,7 @@ screen.append(score_label)
 def roid_hit(roid,hit_ship=False):
     global score
     print("hit")
+    play_sound(1)
     if hit_ship:
         leds.fill(0x9900ff)
         score = max(score + point_ship,0) # never go below score=0
@@ -356,6 +387,7 @@ while True:
         if now - shot_time > 0.2:  # Fire ze missiles 
             shot_time = now
             print("fire", ship.angle, ship.tg[0], ship.angle_quantized)
+            play_sound(0)
             shot_index = (shot_index+1) % len(shots)
             shot = shots[shot_index]
             if shot.hidden:  # we can use this shot
@@ -397,18 +429,9 @@ while True:
 
     display.refresh(target_frames_per_second=30)
 
-    #leds[0:] = [[max(i-10,0) for i in l] for l in leds]  # dim all LEDs
-
     # LED aging and debug
     if time.monotonic() - last_led_time > 0.4:
         last_led_time = time.monotonic()
         leds.fill(0) # age out "you were hit" LEDs
         if 'Macropad' in board_type:  # FIXME figure out way to make per-board
             leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
-        # debug
-        # roid = roids[0]
-        # print("roid0: %d,%d vxy:%1.2f,%1.2f, a:%1.1f, %d" %
-        #       (roid.x,roid.y, roid.vx,roid.vy, roid.angle, roid.tg[0]))
-        # print("ship: %d,%d vxy:%1.2f,%1.2f, a:%1.1f, %d" %
-        #       (ship.x,ship.y, ship.vx,ship.vy, ship.angle, ship.tg[0]))
-
