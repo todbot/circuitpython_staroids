@@ -51,8 +51,9 @@ If you're interested in how to do stuff in CircuitPython, this code does some th
 ## Implementation notes
 
 (Notes for myself mostly)
-- Rotation is accomplished using sprite sheet of all possible rotation.
-For the ship that is 36 rotation tiles at 10-degrees apart. For the asteroids, that's 120 rotation tiles at 3 degrees apart.
+- Rotation is accomplished using sprite sheets containing possible rotations of the sprite.
+For the ship that is 36 rotation images tiles at 10-degrees apart. For the asteroids, that's 120 rotation image tiles at 3 degrees apart. The rotated images were created using ImageMagick
+on a single sprite.
 
 - A simpler version of [this sprite rotation code can be found in this gist](https://gist.github.com/todbot/92373f93db9da0fca5ca4adee8d7d75b) and [this video demo](https://twitter.com/todbot/status/1423331295384399883).
 
