@@ -1,4 +1,3 @@
-
 # staroids_code.py -- fakey Almost Asteroids
 # 4 Aug 2021 - @todbot
 import board, time, math, random
@@ -15,12 +14,19 @@ point_ship = -3
 
 score = 0
 
+# sprite filename templates, '%d' is filled in with tile size (30, 20, 12)
+ship_fname = '/imgs/ship_%d_sheet.bmp'
+roidexp_fname = '/imgs/roidexp_%d_sheet.bmp'
+roid_fnames = ['/imgs/roid0_%d_sheet.bmp', '/imgs/roid1_%d_sheet.bmp']
+shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller 3x3 tile
+bg_fname = '/imgs/bg_starfield.bmp' # hubble star field by default (funhouse/pygamer)
+
 # --- board params -----------------------------------------------------
 
 board_type = os.uname().machine
 
 # Macropad 128x64 monochrome display, uses 4/5/6 keys for L/T/R
-if 'Macropad' in board_type:
+if 'macropad' in board_type.lower():
     import keypad
     import neopixel
     num_roids = 3
@@ -30,12 +36,7 @@ if 'Macropad' in board_type:
     accel_max_ship = 0.08
     vmax = 3
     tile_w = 12
-    tile_h = 12
-    ship_fname = '/imgs/ship_12_sheet.bmp'
-    roid_fnames = ['/imgs/roid0_12_sheet.bmp', '/imgs/roid1_12_sheet.bmp']
-    roidexp_fname = '/imgs/roidexp_12_sheet.bmp'
-    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_stars_mono.bmp'
+    bg_fname = '/imgs/bg_stars_mono.bmp'  # special monochrome starfield for macropad
     display = board.DISPLAY
     display.rotation = 0
     leds = neopixel.NeoPixel(board.NEOPIXEL, 12, brightness=0.1)
@@ -54,23 +55,18 @@ if 'Macropad' in board_type:
                 thrusting = key.pressed
             firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
+
 # FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
-elif 'FunHouse' in board_type:
+elif 'funhouse' in board_type.lower():
     import digitalio
     import adafruit_dotstar
     num_roids = 4
-    num_shots = 4
+    num_shots = 5
     shot_life = 1
-    accel_max_shot = 4
+    accel_max_shot = 5
     accel_max_ship = 0.2
     vmax = 5
     tile_w = 30
-    tile_h = 30
-    ship_fname = '/imgs/ship_30_sheet.bmp'
-    roid_fnames = ['/imgs/roid0_30_sheet.bmp', '/imgs/roid1_30_sheet.bmp']
-    roidexp_fname = '/imgs/roidexp_30_sheet.bmp'
-    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
     display = board.DISPLAY
     display.rotation = 0
     button_L = digitalio.DigitalInOut(board.BUTTON_UP)     # turn left
@@ -95,7 +91,7 @@ elif 'FunHouse' in board_type:
         return turning, thrusting, firing
     
 # Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
-elif 'Pybadge' in board_type:
+elif 'pybadge' in board_type.lower():
     import keypad
     import neopixel
     num_roids = 3
@@ -105,12 +101,6 @@ elif 'Pybadge' in board_type:
     accel_max_ship = 0.06
     vmax = 3
     tile_w = 20
-    tile_h = 20
-    ship_fname = '/imgs/ship_20_sheet.bmp'
-    roid_fnames = ['/imgs/roid0_20_sheet.bmp', '/imgs/roid1_20_sheet.bmp']
-    roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
-    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field for funhouse
     display = board.DISPLAY
     display.rotation = 0
     keys = keypad.ShiftRegisterKeys(clock=board.BUTTON_CLOCK,data=board.BUTTON_OUT,
@@ -130,6 +120,37 @@ elif 'Pybadge' in board_type:
             firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
 
+# Pygamer 160x128 color display, analog pad L/R for L/R, A for Thrust/Fire
+elif 'pygamer' in board_type.lower():
+    import keypad
+    import neopixel
+    import analogio
+    num_roids = 3
+    num_shots = 3
+    shot_life = 0.5
+    accel_max_shot = 3
+    accel_max_ship = 0.06
+    vmax = 3
+    tile_w = 20
+    display = board.DISPLAY
+    display.rotation = 0
+    keys = keypad.ShiftRegisterKeys(clock=board.BUTTON_CLOCK,data=board.BUTTON_OUT,
+                                    latch=board.BUTTON_LATCH, key_count=8,
+                                    value_when_pressed=True)
+    joystick_x = analogio.AnalogIn(board.JOYSTICK_X)
+    leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
+    # Pygamer, key processing
+    def get_user_input(turning,thrusting,firing):
+        key = keys.events.get()
+        if key:
+            if key.key_number == 1:  # KEY5 THRUST/FIRE!
+                thrusting = key.pressed
+            firing = thrusting  # only using 3 keys
+        turning = 0
+        if joystick_x.value > 55000: turning = 0.12
+        if joystick_x.value < 1000: turning = -0.12
+        return turning, thrusting, firing
+
 # Clue 240x240 color display, A/B for L/R, touch pad 2 (D2) for Thrust/Fire
 elif 'clue' in board_type.lower():
     import keypad
@@ -142,12 +163,6 @@ elif 'clue' in board_type.lower():
     accel_max_ship = 0.06
     vmax = 3
     tile_w = 20
-    tile_h = 20
-    ship_fname = '/imgs/ship_20_sheet.bmp'
-    roid_fnames = ['/imgs/roid0_20_sheet.bmp', '/imgs/roid1_20_sheet.bmp']
-    roidexp_fname = '/imgs/roidexp_20_sheet.bmp'
-    shot_fname = '/imgs/shotsm3.bmp' # shot fname has smaller tile
-    bg_fname = '/imgs/bg_starfield.bmp' # hubble star field
     display = board.DISPLAY
     display.rotation = 0
     shooty = touchio.TouchIn(board.D2)
@@ -170,8 +185,10 @@ else:
 
 # --- board params end -------------------------------------------------
 
+
 # helper object for physics things
 class Thing:
+    hitbox = tile_w // 2  # how big our hitbox is, for all Things
     def __init__(self, x,y, w=0, vx=0,vy=0, angle=0, va=0, tilegrid=None, num_tiles=1):
         self.x, self.y, self.w = x, y, w  # x,y pos and width
         self.vx,self.vy = vx,vy # initial x,y velocity
@@ -189,7 +206,6 @@ class Thing:
         self.y = (self.y + self.vy) % display.height # and left-right
         self.tg.x = int(self.x) - self.w//2 # we think in zero-centered things
         self.tg.y = int(self.y) - self.w//2 # but tilegrids are top-left zero'd
-        #self.angle = (self.angle + self.va) % (math.pi*2)  # if object is spinning & constrain
         self.angle += self.va   # if object is spinning
         # get a tilegrid index based on angle and number of tiles total
         i = round(math.degrees(self.angle) / (360 / self.num_tiles)) % self.num_tiles
@@ -199,8 +215,10 @@ class Thing:
         self.vx, self.vy, self.va = obj.vx, obj.vy, obj.va
     def is_hit(self, obj):
         # try doing all as int math for speed
-        if (int(self.x) > int(obj.x)-hitbox and int(self.x) < int(obj.x)+hitbox and
-            int(self.y) > int(obj.y)-hitbox and int(self.y) < int(obj.y)+hitbox):
+        if (int(self.x) > int(obj.x) - self.hitbox and
+            int(self.x) < int(obj.x) + self.hitbox and
+            int(self.y) > int(obj.y) - self.hitbox and
+            int(self.y) < int(obj.y) + self.hitbox):
                 return True
         return False
     def hide(self,hide=True):
@@ -208,38 +226,35 @@ class Thing:
     @property
     def hidden(self):
         return self.tg.hidden
-    # ship angle seems wrong for shots at times (floating point errors? or me?),
-    # so this computes a new angle based off the very coarse tile grid rotation
-    # I *think* it fixes the weird "off-axis" shots I was seeing 
+    # ship angle is perceptually wrong for shots at times where displayed sprite tile
+    # doesn't match internal Thing angle. So this computes a new angle based off the
+    # coarse tile grid rotation. Seems to fix the weird "off-axis" shots I was seeing
     @property
     def angle_quantized(self): 
         return self.tg[0] * (2*math.pi / self.num_tiles)
 
-hitbox = tile_w//2
-
-display = board.DISPLAY
-display.auto_refresh=False
+display.auto_refresh=False  # only update display on display.refresh()
 
 screen = displayio.Group()  # group that holds everything
 display.show(screen) # add main group to display
 
 # ship sprites
-ship_sprites,ship_sprites_pal = adafruit_imageload.load(ship_fname)
+ship_sprites,ship_sprites_pal = adafruit_imageload.load(ship_fname % tile_w)
 ship_sprites_pal.make_transparent(0)
 shiptg = displayio.TileGrid(ship_sprites, pixel_shader=ship_sprites_pal,
-                            width=1, height=1, tile_width=tile_w, tile_height=tile_h)
+                            width=1, height=1, tile_width=tile_w, tile_height=tile_w)
 # asteroid sprites
 roid_spr_pal = []
 for f in roid_fnames: 
-    spr,pal = adafruit_imageload.load(f)
+    spr,pal = adafruit_imageload.load(f % tile_w)
     pal.make_transparent(0)
     roid_spr_pal.append( (spr,pal) )
 
 # roid exploding sprite
-roidexp_sprites, roidexp_sprites_pal = adafruit_imageload.load(roidexp_fname)
+roidexp_sprites, roidexp_sprites_pal = adafruit_imageload.load(roidexp_fname % tile_w)
 roidexp_sprites_pal.make_transparent(0)
 roidexptg = displayio.TileGrid(roidexp_sprites, pixel_shader=roidexp_sprites_pal,
-                               width=1, height=1, tile_width=tile_w, tile_height=tile_h)
+                               width=1, height=1, tile_width=tile_w, tile_height=tile_w)
 
 # shot sprite
 shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
@@ -255,14 +270,14 @@ for i in range(num_roids):
     vx,vy = random.uniform(-0.5,0.5), random.uniform(-0.2,0.2 ) # more x than y
     spr,pal = roid_spr_pal[ i % len(roid_spr_pal) ]
     roidtg = displayio.TileGrid(spr, pixel_shader=pal, width=1, height=1,
-                                tile_width=tile_w, tile_height=tile_h)
-    va = random.choice((-0.01,0.01)) # either rotate a little one way or other
+                                tile_width=tile_w, tile_height=tile_w)
+    va = random.choice((-0.015,-0.01,0.01,0.015)) # either rotate a little one way or other
     roid = Thing(display.width/2, display.height/2, w=tile_w, vx=vx, vy=vy, va=va,
                  tilegrid=roidtg, num_tiles=num_roid_tiles)
     roids.append(roid)
     screen.append(roid.tg)
 
-# create shot objcts, add to screen, then hide them 
+# create shot objects, add to screen, then hide them 
 shots = []
 for i in range(num_shots):
     shottg = displayio.TileGrid(shot_sprites, pixel_shader=shot_sprites_pal,
@@ -273,7 +288,7 @@ for i in range(num_shots):
     screen.append(shottg)
 
 # create ship object add it to the screen
-ship = Thing( display.width/2, display.height/2, w=tile_w, vx=0.5, vy=0.2, angle=0, va=0,
+ship = Thing( display.width/2, display.height/2, w=tile_w, vx=0.5, vy=0.2, angle=5.5, va=0,
               tilegrid=shiptg, num_tiles=num_ship_tiles)
 screen.append(ship.tg)
 
@@ -293,10 +308,10 @@ def roid_hit(roid,hit_ship=False):
     print("hit")
     if hit_ship:
         leds.fill(0x9900ff)
-        score = max(score + point_ship,0)
+        score = max(score + point_ship,0) # never go below score=0
     else:
         leds.fill(0xff3300)
-        score = max(score + point_roid,0)
+        score = max(score + point_roid,0) # never go below score=0
     score_label.text = ("%03d" % score)
     roidexp.hide(False) # show explosion
     roidexp.set_pos(roid) # give it roid's position
@@ -317,7 +332,7 @@ thrusting = False   # true if thrusting
 firing = False      # true if firing
 while True:
     now = time.monotonic()
-
+    # get what user wants, (thrust & fire separate now, even tho normally don't use it)
     turning, thrusting, firing = get_user_input(turning,thrusting,firing)
 
     # update ship state
@@ -377,7 +392,6 @@ while True:
         leds.fill(0) # age out "you were hit" LEDs
         if 'Macropad' in board_type:  # FIXME figure out way to make per-board
             leds[3:6] = (0x111111,0x111111,0x111111) # return them to on
-        
         # debug
         # roid = roids[0]
         # print("roid0: %d,%d vxy:%1.2f,%1.2f, a:%1.1f, %d" %
