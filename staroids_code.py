@@ -340,7 +340,7 @@ while True:
     if thrusting: 
         ship.accelerate( ship.angle, accel_max_ship)
     if firing:
-        if now - shot_time > 0.2:  # Fire ze missiles
+        if now - shot_time > 0.2:  # Fire ze missiles (0.2 = time betwen shots)
             shot_time = now
             print("fire", ship.angle, ship.tg[0], ship.angle_quantized)
             shot_index = (shot_index+1) % len(shots)
@@ -360,7 +360,7 @@ while True:
         roid.update_pos()
         for shot in shots:
             if not shot.hidden and roid.is_hit(shot):
-                roid_hit(roid) # FIXME magic value 0 and 1
+                roid_hit(roid)
                 shot.hide()
         if roid.is_hit( ship ):
             roid_hit(roid,hit_ship=True)

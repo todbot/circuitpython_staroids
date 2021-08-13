@@ -25,8 +25,8 @@ https://user-images.githubusercontent.com/274093/129097480-3be3b302-d7ba-4690-95
 
 - Install CircuitPython onto your board (requires CircuitPython 7.0.0-alpha.5 or better)
 - Install needed CircuitPython libraries
-- Copy `staroids_code.py` to your CIRCUITPY drive as `code.py`
 - Copy entire `imgs` directory to CIRCUITPY drive
+- Copy `staroids_code.py` to your CIRCUITPY drive as `code.py`
 
 If you have [`circup`](https://github.com/adafruit/circup) installed,
 installation can be done entirely via the command-line
@@ -35,8 +35,7 @@ using the included `requirements.txt` and a few copy commands. MacOS example bel
 ```
 $ circup install -r ./requirements.txt
 $ cp -aX imgs /Volumes/CIRCUITPY
-$ cp staroids_code.py /Volumes/CIRCUITPY/code.py
-
+$ cp -X staroids_code.py /Volumes/CIRCUITPY/code.py
 ```
 
 ## Code techniques demonstrated
