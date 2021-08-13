@@ -53,7 +53,7 @@ if 'macropad' in board_type.lower():
                 turning = 0.15 if key.pressed else 0
             if key.key_number == 4:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-            firing = thrusting  # only using 3 keys
+        firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
 
 # FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
@@ -117,7 +117,7 @@ elif 'pybadge' in board_type.lower():
                 turning = 0.12 if key.pressed else 0
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-            firing = thrusting  # only using 3 keys
+        firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
 
 # Pygamer 160x128 color display, analog pad L/R for L/R, A for Thrust/Fire
@@ -125,6 +125,7 @@ elif 'pygamer' in board_type.lower():
     import keypad
     import neopixel
     import analogio
+    import rainbowio
     num_roids = 3
     num_shots = 3
     shot_life = 0.5
@@ -139,13 +140,25 @@ elif 'pygamer' in board_type.lower():
                                     value_when_pressed=True)
     joystick_x = analogio.AnalogIn(board.JOYSTICK_X)
     leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
+    rainbowing = False # secret rainbowing mode
     # Pygamer, key processing
     def get_user_input(turning,thrusting,firing):
+        global rainbowing
         key = keys.events.get()
         if key:
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
-            firing = thrusting  # only using 3 keys
+            if key.key_number == 3:  # select key
+                rainbowing = key.pressed
+        if rainbowing:  # rainbow mode!
+            c = rainbowio.colorwheel( time.monotonic()*100 % 255 )
+            #bg_pal[1] = c # this slows things down a lot due to full screen redraw
+            ship_sprites_pal[1] = c
+            roidexp_sprites_pal[1] = c
+            shot_sprites_pal[1] = c
+            for (s,p) in roid_spr_pal: p[1] = c
+            score_label.color = c
+        firing = thrusting  # only using 3 keys
         turning = 0
         if joystick_x.value > 55000: turning = 0.12
         if joystick_x.value < 1000: turning = -0.12
@@ -261,8 +274,8 @@ shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
 shot_sprites_pal.make_transparent(0)
 
 # get background image
-bgimg, bgpal = adafruit_imageload.load(bg_fname)
-screen.append(displayio.TileGrid(bgimg, pixel_shader=bgpal))
+bg_img, bg_pal = adafruit_imageload.load(bg_fname)
+screen.append(displayio.TileGrid(bg_img, pixel_shader=bg_pal))
 
 # create all the asteroids, add them to the screen
 roids = []
@@ -340,7 +353,7 @@ while True:
     if thrusting: 
         ship.accelerate( ship.angle, accel_max_ship)
     if firing:
-        if now - shot_time > 0.2:  # Fire ze missiles (0.2 = time betwen shots)
+        if now - shot_time > 0.2:  # Fire ze missiles 
             shot_time = now
             print("fire", ship.angle, ship.tg[0], ship.angle_quantized)
             shot_index = (shot_index+1) % len(shots)
@@ -360,7 +373,7 @@ while True:
         roid.update_pos()
         for shot in shots:
             if not shot.hidden and roid.is_hit(shot):
-                roid_hit(roid)
+                roid_hit(roid) # FIXME magic value 0 and 1
                 shot.hide()
         if roid.is_hit( ship ):
             roid_hit(roid,hit_ship=True)
