@@ -27,6 +27,11 @@ bg_fname = '/imgs/bg_starfield.bmp' # hubble star field by default (funhouse/pyg
 pew_wav_fname = "/snds/pew1_11k.wav"
 exp_wav_fname = "/snds/exp1_11k.wav"
 
+# default effect handling (sound/light)
+# fx_type = 0 pew, fx_type = 1 explosion
+def play_effects(fx_type,fx_color=0):
+    if fx_type==1: leds.fill(fx_color)
+
 # --- board params -----------------------------------------------------
 
 board_type = os.uname().machine
@@ -61,9 +66,6 @@ if 'macropad' in board_type.lower():
                 thrusting = key.pressed
         firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
-    # Macropad, sound handling
-    def play_sound(s): # s=0 pew, s = 1 exp
-        pass # not implemented
 
 # FunHouse 240x240 color display, only 3 buttons so L/T/F (when rotated 90-deg)
 elif 'funhouse' in board_type.lower():
@@ -98,9 +100,6 @@ elif 'funhouse' in board_type.lower():
             thrusting = True
         firing = thrusting  # only using 3 keys!
         return turning, thrusting, firing
-    # Funhouse, sound handling
-    def play_sound(s): # s=0 pew, s = 1 exp
-        pass # not implemented
     
 # Pybadge 160x128 color display, D-pad L/R for L/R, A for Thrust/Fire
 elif 'pybadge' in board_type.lower():
@@ -131,9 +130,6 @@ elif 'pybadge' in board_type.lower():
                 thrusting = key.pressed
         firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
-    # Pybadge, sound handling
-    def play_sound(s): # s=0 pew, s = 1 exp
-        pass # not implemented
 
 # Pygamer 160x128 color display, analog pad L/R for L/R, A for Thrust/Fire
 elif 'pygamer' in board_type.lower():
@@ -185,11 +181,12 @@ elif 'pygamer' in board_type.lower():
         if joystick_x.value > 55000: turning = 0.12
         if joystick_x.value < 1000: turning = -0.12
         return turning, thrusting, firing
-    # Pygame, sound handling
-    def play_sound(s): # s=0 pew, s = 1 exp
+    # Pygamer, sound/light handling, overrides default
+    def play_effect(fx_type,fx_color=0): # fx_type=0 pew, fx_type = 1 explosion
+        if fx_type==1: leds.fill(fx_color)
         if enable_sound:
-            if s==0: audio.play(wav_pew)
-            if s==1: audio.play(wav_exp)
+            if fx_type==0: audio.play(wav_pew)
+            if fx_type==1: audio.play(wav_exp)
 
 # Clue 240x240 color display, A/B for L/R, touch pad 2 (D2) for Thrust/Fire
 elif 'clue' in board_type.lower():
@@ -219,9 +216,6 @@ elif 'clue' in board_type.lower():
         thrusting = shooty.value
         firing = thrusting  # only using 3 keys!
         return turning, thrusting, firing
-    # Clue, sound handling
-    def play_sound(s): # s=0 pew, s = 1 exp
-        pass # not implemented
 
 else:
     raise OSError("unknown board")
@@ -349,12 +343,12 @@ screen.append(score_label)
 def roid_hit(roid,hit_ship=False):
     global score
     print("hit")
-    play_sound(1)
     if hit_ship:
+        play_effect(1, 0x9900ff)
         leds.fill(0x9900ff)
         score = max(score + point_ship,0) # never go below score=0
     else:
-        leds.fill(0xff3300)
+        play_effect(1, 0xff3300)
         score = max(score + point_roid,0) # never go below score=0
     score_label.text = ("%03d" % score)
     roidexp.hide(False) # show explosion
@@ -387,7 +381,7 @@ while True:
         if now - shot_time > 0.2:  # Fire ze missiles 
             shot_time = now
             print("fire", ship.angle, ship.tg[0], ship.angle_quantized)
-            play_sound(0)
+            play_effect(0)
             shot_index = (shot_index+1) % len(shots)
             shot = shots[shot_index]
             if shot.hidden:  # we can use this shot
