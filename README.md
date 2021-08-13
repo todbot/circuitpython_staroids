@@ -1,8 +1,11 @@
 # CircuitPython Staroids
 
-Something like **Asteroids** (but not really), done in CircuitPython.
-Works with [FunHouse](https://www.adafruit.com/product/4985), [MacroPad](https://www.adafruit.com/product/5128)
-and [Pybadge](https://www.adafruit.com/product/4200).
+Something like **Asteroids**, done in CircuitPython.
+Works with [FunHouse](https://www.adafruit.com/product/4985),
+[MacroPad](https://www.adafruit.com/product/5128),
+[Pybadge](https://www.adafruit.com/product/4200),
+[CLUE](https://www.adafruit.com/product/4500),
+and [Pygamer](https://www.adafruit.com/product/4242).
 
 <img src="./docs/staroids_family1.jpg" />
 
@@ -48,16 +51,28 @@ If you're interested in how to do stuff in CircuitPython, this code does some th
 ## Implementation notes
 
 (Notes for myself mostly)
+- Rotation is accomplished using sprite sheet of all possible rotation.
+For the ship that is 36 rotation tiles at 10-degrees apart. For the asteroids, that's 120 rotation tiles at 3 degrees apart.
+
+- A simpler version of [this sprite rotation code can be found in this gist](https://gist.github.com/todbot/92373f93db9da0fca5ca4adee8d7d75b) and [this video demo](https://twitter.com/todbot/status/1423331295384399883).
+
+- Another way to do this is via `bitmaptools.rotozoom()` but it seemed like it would not perform well
+on boards with chips with no floating-point hardware (RP2040, ESP32-S2).
+You can find that [demo rotozoom code in this gist](https://gist.github.com/todbot/8b524daba51bd84c92799a2401324521) and [this video demo](https://twitter.com/todbot/status/1423078302391037953).
 
 - Ship, Asteroids, Shots (`Thing` objects) are in a floating-point (x,y) space,
 while its corresponding `displayio.TileGrid` is integer (x,y) space. This allows a `Thing`
 to accumulate its (x,y) velocity & acceleration without weird int->float truncations.
+
 - Similarly, `Thing` rotation angle is floatping point but gets quantized to the
 sprite sheet's tile number.
+
 - Per-board settings is useful not just for technical differences (sprite sizes),
 but also for gameplay params (accel_max, vmax)
+
 - Hitbox calculations are done on floating-point (x,y) of the `Thing` objects,
 but converted to int before hitbox calculation to hopefully speed things up.
+
 - Sprite sizes (e.g. 30x30 pixels), sprite bit-depth (1-bit for these sprits),
 and quantity on screen (5 asteroids, 4 shots) greatly influences framerate.
 For a game like Asteroids where FPS needs to be high, you have to balance this carefully.
