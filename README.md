@@ -58,7 +58,11 @@ sprite sheet's tile number.
 but also for gameplay params (accel_max, vmax)
 - Hitbox calculations are done on floating-point (x,y) of the `Thing` objects,
 but converted to int before hitbox calculation to hopefully speed things up.
-
+- Sprite sizes (e.g. 30x30 pixels), sprite bit-depth (1-bit for these sprits),
+and quantity on screen (5 asteroids, 4 shots) greatly influences framerate.
+For a game like Asteroids where FPS needs to be high, you have to balance this carefully.
+To see this, try converting the ship spritesheet to a 4-bit (16-color) BMP and watch the
+framerate drop. Or you might run out of memory.
 
 
 ## How the sprite sheets were made
@@ -81,9 +85,10 @@ and you want to create the sprite sheets:
 The entire set of ImageMagick commands to create the sprite sheet of rotations,
 as a single shell script is below.
 
-For MacroPad, the sprites had to be re-drawn as 12px square tile instead of 30px.
+Sprites were hand-drawn in Pixelmator using vague recollection of Asteroids.
+For MacroPad, sprites were re-drawn as 12px square tile instead of 30px.
 The were drawn with https://www.pixilart.com/art/staroids-sprites-12px-58e5853d4c2b0ef.
-All other sprites were drawn in Pixelmator.
+For Pybadge, 30px sprites were rescaled to 20px using ImageMagick.
 
 ```shell
 # ship0 (coasting)
