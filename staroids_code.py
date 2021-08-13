@@ -29,7 +29,7 @@ exp_wav_fname = "/snds/exp1_11k.wav"
 
 # default effect handling (sound/light)
 # fx_type = 0 pew, fx_type = 1 explosion
-def play_effects(fx_type,fx_color=0):
+def play_effect(fx_type,fx_color=0):
     if fx_type==1: leds.fill(fx_color)
 
 # --- board params -----------------------------------------------------
@@ -105,6 +105,7 @@ elif 'funhouse' in board_type.lower():
 elif 'pybadge' in board_type.lower():
     import keypad
     import neopixel
+    import rainbowio
     num_roids = 3
     num_shots = 3
     shot_life = 0.5
@@ -118,8 +119,17 @@ elif 'pybadge' in board_type.lower():
                                     latch=board.BUTTON_LATCH, key_count=8,
                                     value_when_pressed=True)
     leds = neopixel.NeoPixel(board.NEOPIXEL, 5, brightness=0.1)
+    rainbowing = False # secret rainbowing mode
+    if enable_sound:
+        import audiocore, audioio, digitalio
+        speaker_enable = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+        speaker_enable.switch_to_output(value=True)
+        wav_pew = audiocore.WaveFile(open(pew_wav_fname,"rb"))
+        wav_exp = audiocore.WaveFile(open(exp_wav_fname,"rb"))
+        audio = audioio.AudioOut(board.SPEAKER)
     # Pybadge, key processing
     def get_user_input(turning,thrusting,firing):
+        global rainbowing
         key = keys.events.get()
         if key:
             if key.key_number == 7:  # KEY4 rotate LEFT
@@ -128,8 +138,24 @@ elif 'pybadge' in board_type.lower():
                 turning = 0.12 if key.pressed else 0
             if key.key_number == 1:  # KEY5 THRUST/FIRE!
                 thrusting = key.pressed
+            if key.key_number == 3:  # SELECT key
+                rainbowing = key.pressed
+        if rainbowing:
+            c = rainbowio.colorwheel( time.monotonic()*100 % 255 )
+            #bg_pal[1] = c # this slows things down a lot due to full screen redraw
+            ship_sprites_pal[1] = c
+            roidexp_sprites_pal[1] = c
+            shot_sprites_pal[1] = c
+            for (s,p) in roid_spr_pal: p[1] = c
+            score_label.color = c
         firing = thrusting  # only using 3 keys
         return turning, thrusting, firing
+    # Pybadge, sound/light handling, overrides default
+    def play_effect(fx_type,fx_color=0): # fx_type=0 pew, fx_type = 1 explosion
+        if fx_type==1: leds.fill(fx_color)
+        if enable_sound:
+            if fx_type==0: audio.play(wav_pew)
+            if fx_type==1: audio.play(wav_exp)
 
 # Pygamer 160x128 color display, analog pad L/R for L/R, A for Thrust/Fire
 elif 'pygamer' in board_type.lower():
@@ -161,7 +187,7 @@ elif 'pygamer' in board_type.lower():
         audio = audioio.AudioOut(board.SPEAKER)
     # Pygamer, key processing
     def get_user_input(turning,thrusting,firing):
-        global rainbowing, enable_sound
+        global rainbowing
         key = keys.events.get()
         if key:
             if key.key_number == 1:  # KEY5 THRUST/FIRE!

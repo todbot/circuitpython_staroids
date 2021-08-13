@@ -57,8 +57,9 @@ that might be useful. Those include:
 - In general, sound effects are not part of this game. CircuitPython doesn't do sound
 as well as it does graphics, so I find the experience a little grating.
 
-- But if you have a Pygamer and want sounds, you can set `enable_sound=True` at the top
-of the `code.py` and copy over the `snds` directory to the CIRCUITPY drive to enable sounds.
+- But if you have a Pybadge or Pygamer and want sounds, you can set
+`enable_sound=True` at the top of the `code.py` and copy over the
+`snds` directory to the CIRCUITPY drive to enable sounds.
 
 - The sounds were created by me from audio of [John Park's 8/12/21 livestream](https://www.youtube.com/watch?v=EYGYTlM6usc).
 Specifically, the "pew" sound comes from the 6:56 mark of him saying "pew pew"
