@@ -243,6 +243,70 @@ elif 'clue' in board_type.lower():
         firing = thrusting  # only using 3 keys!
         return turning, thrusting, firing
 
+# PyPortal 320x240 display + Joy Featherwing over I2C STEMMA port.
+# X-joystick for L/R, A = fire, B = thrust, SEL for rainbowing
+elif 'pyportal' in board_type.lower():
+    from adafruit_seesaw.seesaw import Seesaw
+    import neopixel
+    import analogio
+    import rainbowio
+    import busio
+    num_roids = 6
+    num_shots = 3
+    shot_life = 2
+    accel_max_shot = 3
+    accel_max_ship = 0.06
+    vmax = 3
+    tile_w = 20
+    bg_fname = '/imgs/bg_starfield_320x240.bmp' # hubble star field big for PyPortal
+    display = board.DISPLAY
+    display.rotation = 0
+    i2c_bus = busio.I2C(board.SCL, board.SDA)
+    ss = Seesaw(i2c_bus)
+
+    BUTTON_A = 6
+    BUTTON_B = 7
+    # BUTTON_Y = 9
+    # BUTTON_X = 10
+    BUTTON_SEL = 14
+    button_mask = ( (1 << BUTTON_A) | (1 << BUTTON_B) | (1 << BUTTON_SEL) )
+
+    ss.pin_mode_bulk(button_mask, ss.INPUT_PULLUP)
+    leds = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=1)
+    rainbowing = False # secret rainbowing mode
+    if enable_sound:
+        import audiocore, audioio, digitalio
+        speaker_enable = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
+        speaker_enable.switch_to_output(value=True)
+        wav_pew = audiocore.WaveFile(open(pew_wav_fname,"rb"))
+        wav_exp = audiocore.WaveFile(open(exp_wav_fname,"rb"))
+        audio = audioio.AudioOut(board.SPEAKER)
+    # Joy FeatherWing, button processing
+    def get_user_input(turning,thrusting,firing):
+        global rainbowing
+        buttons = ss.digital_read_bulk(button_mask)
+        thrusting = not (buttons & 1<<BUTTON_B)
+        firing = not (buttons & 1<<BUTTON_A)
+        rainbowing = not (buttons & 1<<BUTTON_SEL)
+        if rainbowing:  # rainbow mode!
+            c = rainbowio.colorwheel( time.monotonic()*100 % 255 )
+            bg_pal[1] = c # this slows things down a lot due to full screen redraw
+            ship_sprites_pal[1] = c
+            roidexp_sprites_pal[1] = c
+            shot_sprites_pal[1] = c
+            for (s,p) in roid_spr_pal: p[1] = c
+            score_label.color = c
+        turning = 0
+        joystick_x = ss.analog_read(3)
+        if joystick_x  > 700: turning = 0.12
+        if joystick_x  < 500: turning = -0.12
+        return turning, thrusting, firing
+    def play_effect(fx_type,fx_color=0): # fx_type=0 pew, fx_type = 1 explosion
+        if fx_type==1: leds.fill(fx_color)
+        if enable_sound:
+            if fx_type==0: audio.play(wav_pew)
+            if fx_type==1: audio.play(wav_exp)
+
 else:
     raise OSError("unknown board")
 
@@ -296,12 +360,15 @@ class Thing:
     def angle_quantized(self): 
         return self.tg[0] * (2*math.pi / self.num_tiles)
 
+
+# --- main code setup -------------------------------------------------
+
 display.auto_refresh=False  # only update display on display.refresh()
 
 screen = displayio.Group()  # group that holds everything
 display.show(screen) # add main group to display
 
-# ship sprites
+# make ship sprites
 ship_sprites,ship_sprites_pal = adafruit_imageload.load(ship_fname % tile_w)
 ship_sprites_pal.make_transparent(0)
 shiptg = displayio.TileGrid(ship_sprites, pixel_shader=ship_sprites_pal,
@@ -313,21 +380,21 @@ for f in roid_fnames:
     pal.make_transparent(0)
     roid_spr_pal.append( (spr,pal) )
 
-# roid exploding sprite
+# make roid exploding sprite
 roidexp_sprites, roidexp_sprites_pal = adafruit_imageload.load(roidexp_fname % tile_w)
 roidexp_sprites_pal.make_transparent(0)
 roidexptg = displayio.TileGrid(roidexp_sprites, pixel_shader=roidexp_sprites_pal,
                                width=1, height=1, tile_width=tile_w, tile_height=tile_w)
 
-# shot sprite
+# make shot sprite
 shot_sprites, shot_sprites_pal = adafruit_imageload.load(shot_fname)
 shot_sprites_pal.make_transparent(0)
 
-# get background image
+# display background image
 bg_img, bg_pal = adafruit_imageload.load(bg_fname)
 screen.append(displayio.TileGrid(bg_img, pixel_shader=bg_pal))
 
-# create all the asteroids, add them to the screen
+# create all the asteroid Things, add them to the screen
 roids = []
 for i in range(num_roids):
     vx,vy = random.uniform(-0.5,0.5), random.uniform(-0.2,0.2 ) # more x than y
@@ -340,7 +407,7 @@ for i in range(num_roids):
     roids.append(roid)
     screen.append(roid.tg)
 
-# create shot objects, add to screen, then hide them 
+# create shot Things, add to screen, then hide them 
 shots = []
 for i in range(num_shots):
     shottg = displayio.TileGrid(shot_sprites, pixel_shader=shot_sprites_pal,
@@ -350,12 +417,12 @@ for i in range(num_shots):
     shots.append(shot)
     screen.append(shottg)
 
-# create ship object add it to the screen
+# create ship Thing, add it to the screen
 ship = Thing( display.width/2, display.height/2, w=tile_w, vx=0.5, vy=0.2, angle=5.5, va=0,
               tilegrid=shiptg, num_tiles=num_ship_tiles)
 screen.append(ship.tg)
 
-# create explosion object, add to screen, but hide it
+# create explosion Thing, add to screen, but hide it
 roidexp = Thing(display.width/2, display.height/2, w=tile_w, va=0.2,
                  tilegrid=roidexptg, num_tiles=8)
 roidexp.hide() # initially don't show
@@ -385,8 +452,8 @@ def roid_hit(roid,hit_ship=False):
     roid.x = random.randint(0,display.width)
     roid.y = random.randint(0,display.height)
 
-# ----------------------------------------------------------------------
-# main loop
+# --- main loop --------------------------------------------------------
+
 last_led_time = 0   # when was LED age last checked
 last_roid_time = 0  # when was asteroid age last checked  
 shot_time = 0       # when did shooting start
@@ -394,6 +461,7 @@ shot_index = -1     # which shot are we on
 turning = 0 # neg if currrently turning left, pos if turning right
 thrusting = False   # true if thrusting 
 firing = False      # true if firing
+
 while True:
     now = time.monotonic()
     # get what user wants, (thrust & fire separate now, even tho normally don't use it)
